@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Vendor portal</h1>
+<p class="lede">Sandbox login. Username <code>agent</code> / password <code>sandbox</code>.</p>
+{% if error %}<p id="login-error" class="error">{{ error }}</p>{% endif %}
+<form id="portal-login" method="post" action="/portal/login">
+  <label>Username <input id="username" name="username" autocomplete="username" /></label>
+  <label>Password <input id="password" name="password" type="password" autocomplete="current-password" /></label>
+  <button id="login-submit" type="submit">Sign in</button>
+</form>
+{% endblock %}

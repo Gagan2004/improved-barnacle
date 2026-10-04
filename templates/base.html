@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }} · Atrium</title>
+  <link rel="stylesheet" href="/static/world.css" />
+</head>
+<body>
+  <header class="top">
+    <a class="mark" href="/worker">Atrium</a>
+    <nav>
+      <a href="/inbox" {% if request.url.path.startswith('/inbox') %}class="on"{% endif %}>Inbox</a>
+      <a href="/portal" {% if request.url.path.startswith('/portal') %}class="on"{% endif %}>Vendor portal</a>
+      <a href="/ledger" {% if request.url.path.startswith('/ledger') %}class="on"{% endif %}>Ledger</a>
+      <a href="/worker">Worker</a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Internal ledger</h1>
+<p class="lede">Accounts payable. Duplicate vendor + invoice id is rejected.</p>
+{% if notice %}<p id="ledger-notice" class="ok">Recorded payable {{ notice }}</p>{% endif %}
+<p><a id="ledger-new" href="/ledger/new">Record a payable</a></p>
+<table id="ledger-table">
+  <thead>
+    <tr><th>ID</th><th>Vendor</th><th>Invoice</th><th>Amount</th><th>Due</th><th>Source</th></tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>{{ r.vendor }}</td>
+      <td>{{ r.invoice_id }}</td>
+      <td>{{ "%.2f"|format(r.amount) }}</td>
+      <td>{{ r.due_date }}</td>
+      <td>{{ r.source }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

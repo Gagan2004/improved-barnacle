@@ -1,0 +1,33 @@
+hero: &hero "Find the latest invoice from Northwind, extract the amount and due date, enter it into our internal ledger, and tell me once it is done."
+
+scenarios:
+  hero:
+    goal: *hero
+    expect: "Ledger contains Northwind INV-1042 for 4280.50 due 2026-10-15. Verifier passes."
+    ok_status: [succeeded]
+
+  overdue:
+    goal: "Find overdue inbox invoices (due before 2026-10-03) and record only those that are not already in the ledger."
+    expect: "Records Northwind INV-1030, INV-1022, Acme INV-A-07 (via portal if attachment missing). Skips Contoso INV-C-88 which is already in the ledger."
+    ok_status: [succeeded, partial]
+
+  vague_vendor:
+    goal: "Find the latest invoice from Company X, extract the amount and due date, enter it into the ledger, and tell me when it is done."
+    expect: "Agent asks which vendor Company X is. After a reply such as Northwind, continues the hero path."
+    ok_status: [succeeded, partial, waiting_user]
+
+  portal_retry:
+    goal: *hero
+    fail: {target: portal, count: 1}
+    expect: "First portal list may 500; agent retries and still posts INV-1042."
+    ok_status: [succeeded, partial]
+
+  duplicate:
+    goal: "Enter Contoso invoice INV-C-88 into the ledger if it is not already there."
+    expect: "ledger_lookup finds seed row; agent does not double-post; finish citing existing id."
+    ok_status: [succeeded]
+
+  unreadable:
+    goal: "Extract the Globex invoice from the inbox and enter it into the ledger."
+    expect: "PDF is unreadable. Agent tries portal or asks the user. Must not invent 99.00 unless read from portal HTML. Fail-closed if still unsure."
+    ok_status: [succeeded, partial, failed]

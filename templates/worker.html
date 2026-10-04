@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Atrium Clerk</title>
+  <link rel="stylesheet" href="/static/worker.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <p class="eyebrow">Atrium · sandbox</p>
+      <h1>Clerk</h1>
+      <p class="lede">Give it an AP goal. It drives inbox, portal, and ledger in the browser, then checks the books.</p>
+      {% if not has_key %}
+      <p class="warn">Set <code>GEMINI_API_KEY</code> in <code>.env</code> before running.</p>
+      {% endif %}
+      <form id="run-form">
+        <label>Task
+          <textarea id="goal" name="goal" rows="5">{{ hero }}</textarea>
+        </label>
+        <div class="chips">
+          <button type="button" data-fill="hero">Hero: Northwind invoice</button>
+          <button type="button" data-fill="overdue">Generalize: overdue payables</button>
+          <button type="button" data-fill="vague">Clarify: Company X</button>
+        </div>
+        <button type="submit" class="go" {% if not has_key %}disabled{% endif %}>Run worker</button>
+      </form>
+      <nav class="world-links">
+        <a href="/inbox" target="_blank">Inbox</a>
+        <a href="/portal" target="_blank">Portal</a>
+        <a href="/ledger" target="_blank">Ledger</a>
+      </nav>
+      <p class="hint">Portal login: <code>agent</code> / <code>sandbox</code></p>
+    </aside>
+    <section class="trace-col">
+      <header>
+        <span id="status-pill" class="pill">idle</span>
+        <span id="run-id"></span>
+      </header>
+      <ol id="trace"></ol>
+      <form id="ask-form" class="hidden">
+        <p id="ask-q"></p>
+        <input id="ask-text" name="text" placeholder="Your answer" />
+        <button type="submit">Reply</button>
+      </form>
+      <article id="result" class="hidden">
+        <h2>Outcome</h2>
+        <p id="result-summary"></p>
+        <pre id="result-json"></pre>
+        <div id="shots"></div>
+      </article>
+    </section>
+  </div>
+  <script>
+    const HERO = {{ hero | tojson }};
+    const OVERDUE = {{ overdue | tojson }};
+    const VAGUE = "Find the latest invoice from Company X, extract the amount and due date, enter it into the ledger, and tell me when it is done.";
+    let runId = null;
+    const trace = document.getElementById("trace");
+    const pill = document.getElementById("status-pill");
+    const askForm = document.getElementById("ask-form");
+    const result = document.getElementById("result");
+
+    document.querySelectorAll("[data-fill]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const map = { hero: HERO, overdue: OVERDUE, vague: VAGUE };
+        document.getElementById("goal").value = map[btn.dataset.fill];
+      });
+    });
+
+    function addEvent(ev) {
+      const li = document.createElement("li");
+      li.className = ev.kind || "event";
+      const kind = document.createElement("strong");
+      kind.textContent = ev.kind || "event";
+      const pre = document.createElement("pre");
+      const payload = ev.payload || ev;
+      pre.textContent = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2).slice(0, 4000);
+      li.append(kind, pre);
+      if (payload && payload.screenshot) {
+        const img = document.createElement("img");
+        const name = payload.screenshot.split(/[\\/]/).pop();
+        img.src = "/evidence/" + runId + "/" + name;
+        img.alt = "page screenshot";
+        li.append(img);
+      }
+      trace.append(li);
+      li.scrollIntoView({ block: "end" });
+    }
+
+    function setStatus(s) {
+      pill.textContent = s;
+      pill.className = "pill " + s;
+    }
+
+    document.getElementById("run-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      trace.innerHTML = "";
+      result.classList.add("hidden");
+      askForm.classList.add("hidden");
+      const body = new FormData();
+      body.set("goal", document.getElementById("goal").value);
+      const res = await fetch("/worker/runs", { method: "POST", body });
+      const data = await res.json();
+      if (!res.ok) {
+        addEvent({ kind: "error", payload: data });
+        return;
+      }
+      runId = data.id;
+      document.getElementById("run-id").textContent = runId;
+      setStatus("running");
+      const src = new EventSource("/worker/runs/" + runId + "/events");
+      src.onmessage = (msg) => {
+        const ev = JSON.parse(msg.data);
+        if (ev.kind === "ping") return;
+        if (ev.kind === "hello") return;
+        if (ev.kind === "status") setStatus((ev.payload && ev.payload.status) || "running");
+        if (ev.kind === "ask_user") {
+          document.getElementById("ask-q").textContent = ev.payload.question;
+          askForm.classList.remove("hidden");
+          setStatus("waiting_user");
+        }
+        if (ev.kind === "done") {
+          setStatus(ev.payload.status);
+          document.getElementById("result-summary").textContent = ev.payload.summary || "";
+          document.getElementById("result-json").textContent = JSON.stringify(ev.payload, null, 2);
+          const shots = document.getElementById("shots");
+          shots.innerHTML = "";
+          (ev.payload.evidence && ev.payload.evidence.screenshots || []).forEach((href) => {
+            const img = document.createElement("img");
+            img.src = href;
+            shots.append(img);
+          });
+          result.classList.remove("hidden");
+        }
+        if (ev.kind !== "end") addEvent(ev);
+        if (ev.kind === "end") src.close();
+      };
+    });
+
+    askForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const body = new FormData();
+      body.set("text", document.getElementById("ask-text").value);
+      await fetch("/worker/runs/" + runId + "/reply", { method: "POST", body });
+      askForm.classList.add("hidden");
+      document.getElementById("ask-text").value = "";
+    });
+  </script>
+</body>
+</html>

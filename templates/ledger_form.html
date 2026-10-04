@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/ledger">← Ledger</a></p>
+<h1>Record payable</h1>
+{% if error %}<p id="ledger-error" class="error">{{ error }}</p>{% endif %}
+<form id="ledger-form" method="post" action="/ledger/new">
+  <label>Vendor <input id="vendor" name="vendor" required /></label>
+  <label>Invoice id <input id="invoice_id" name="invoice_id" required /></label>
+  <label>Amount <input id="amount" name="amount" required /></label>
+  <label>Due date <input id="due_date" name="due_date" placeholder="YYYY-MM-DD" required /></label>
+  <label>Source <input id="source" name="source" value="inbox" /></label>
+  <button id="ledger-submit" type="submit">Save payable</button>
+</form>
+{% endblock %}

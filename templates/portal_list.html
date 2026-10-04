@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Vendor invoices</h1>
+<p>Signed in as <span id="portal-user">{{ user }}</span> · <a href="/portal/logout">Sign out</a></p>
+<table id="portal-table">
+  <thead>
+    <tr><th>Issued</th><th>Vendor</th><th>Invoice</th><th>Amount</th><th>Due</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for inv in invoices %}
+    <tr>
+      <td>{{ inv.issued }}</td>
+      <td>{{ inv.vendor }}</td>
+      <td>{{ inv.invoice_id }}</td>
+      <td>{{ "%.2f"|format(inv.amount) }}</td>
+      <td>{{ inv.due_date }}</td>
+      <td><a id="portal-inv-{{ inv.invoice_id }}" href="/portal/invoices/{{ inv.id }}">Open</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

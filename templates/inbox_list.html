@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Mail inbox</h1>
+<p class="lede">Internal AP mailbox. Newest first. Sandbox only.</p>
+<table id="inbox-table" data-testid="inbox-table">
+  <thead>
+    <tr><th>Received</th><th>From</th><th>Subject</th><th>Vendor</th></tr>
+  </thead>
+  <tbody>
+    {% for e in emails %}
+    <tr>
+      <td>{{ e.received_at }}</td>
+      <td>{{ e.sender }}</td>
+      <td><a id="email-link-{{ e.id }}" href="/inbox/{{ e.id }}">{{ e.subject }}</a></td>
+      <td>{{ e.vendor or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

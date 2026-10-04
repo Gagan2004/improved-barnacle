@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/inbox" id="back-inbox">← Inbox</a></p>
+<article id="email-detail" data-testid="email-detail">
+  <h1 id="email-subject">{{ email.subject }}</h1>
+  <dl>
+    <dt>From</dt><dd id="email-from">{{ email.sender }}</dd>
+    <dt>Received</dt><dd id="email-received">{{ email.received_at }}</dd>
+    <dt>Vendor</dt><dd id="email-vendor">{{ email.vendor or "—" }}</dd>
+    <dt>Invoice</dt><dd id="email-invoice-id">{{ email.invoice_id or "—" }}</dd>
+  </dl>
+  <div id="email-body">{{ email.body_html | safe }}</div>
+  {% if email.attachment_name %}
+  <p>
+    Attachment:
+    <a id="email-attachment" href="/files/invoices/{{ email.attachment_name }}">{{ email.attachment_name }}</a>
+  </p>
+  {% else %}
+  <p id="email-no-attachment">No attachment. Check the vendor portal.</p>
+  {% endif %}
+</article>
+{% endblock %}
